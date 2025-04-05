@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yardpraisal MVP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Basic styling for hiding/showing screens */
+        .screen {
+            display: none; /* Hide all screens by default */
+            min-height: 80vh; /* Ensure screens take up significant height */
+        }
+        .screen.active {
+            display: flex; /* Show active screen as a flex container */
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        /* Style for the video feed */
+        #cameraFeed {
+            width: 100%;
+            max-width: 500px; /* Limit max width */
+            height: auto;
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid #e5e7eb; /* gray-200 */
+            background-color: #f3f4f6; /* gray-100 */
+            margin: 1rem auto; /* my-4 mx-auto */
+        }
+         /* Simple button styling */
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem; /* py-3 px-6 */
+            border-radius: 0.5rem; /* rounded-lg */
+            font-weight: 600; /* font-semibold */
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .btn-primary {
+            background-color: #2563eb; /* bg-blue-600 */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8; /* hover:bg-blue-700 */
+        }
+         .btn-secondary {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            color: #374151; /* text-gray-700 */
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db; /* hover:bg-gray-300 */
+        }
+        /* Message area styling */
+        #messageArea {
+            margin-top: 1rem; /* mt-4 */
+            padding: 0.75rem; /* p-3 */
+            border-radius: 0.5rem; /* rounded-lg */
+            text-align: center;
+        }
+        #messageArea.error {
+            background-color: #fee2e2; /* bg-red-100 */
+            color: #b91c1c; /* text-red-700 */
+            border: 1px solid #fecaca; /* border-red-200 */
+        }
+         #messageArea.success {
+            background-color: #dcfce7; /* bg-green-100 */
+            color: #15803d; /* text-green-700 */
+            border: 1px solid #bbf7d0; /* border-green-200 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans p-4">
+
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Yardpraisal Process</h1>
+
+        <div id="screenWelcome" class="screen active">
+            <div>
+                <h2 class="text-xl font-semibold mb-4">Welcome to Yardpraisal!</h2>
+                <p class="text-gray-600 mb-4">
+                    This service helps you get a desktop appraisal using photos and videos you provide.
+                    Please review our <a href="#" class="text-blue-600 hover:underline">Terms and Conditions</a> and
+                    <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>.
+                </p>
+                <label class="flex items-center space-x-2 mb-6">
+                    <input type="checkbox" id="agreeTerms" class="rounded text-blue-600 focus:ring-blue-500">
+                    <span class="text-gray-700">I agree to the Terms and Conditions and Privacy Policy.</span>
+                </label>
+            </div>
+            <div class="flex justify-end mt-6">
+                <button onclick="goToScreen('screenAddress')" class="btn btn-primary" id="welcomeNext" disabled>Next</button>
+            </div>
+        </div>
+
+        <div id="screenAddress" class="screen">
+             <div>
+                <h2 class="text-xl font-semibold mb-4">Property Address</h2>
+                <p class="text-gray-600 mb-4">Please enter the address of the property you want appraised.</p>
+                <div class="space-y-3">
+                    <input type="text" placeholder="Street Address" class="w-full p-2 border rounded-md">
+                    <input type="text" placeholder="City" value="Toronto" class="w-full p-2 border rounded-md">
+                    <input type="text" placeholder="Province" value="Ontario" class="w-full p-2 border rounded-md">
+                    <input type="text" placeholder="Postal Code" class="w-full p-2 border rounded-md">
+                    <input type="email" placeholder="Your Email Address" class="w-full p-2 border rounded-md">
+                </div>
+            </div>
+            <div class="flex justify-between mt-6">
+                <button onclick="goToScreen('screenWelcome')" class="btn btn-secondary">Back</button>
+                <button onclick="goToScreen('screenGeo')" class="btn btn-primary">Next</button>
+            </div>
+        </div>
+
+        <div id="screenGeo" class="screen">
+             <div>
+                <h2 class="text-xl font-semibold mb-4">Enable Geolocation</h2>
+                <p class="text-gray-600 mb-4">To help verify the property location, please allow access to your device's location when prompted by your browser.</p>
+                <button onclick="requestGeolocation()" class="btn btn-primary mx-auto block mb-4">Enable Location</button>
+                 <div id="geoStatus" class="text-center text-gray-500">Location status will appear here...</div>
+            </div>
+             <div class="flex justify-between mt-6">
+                <button onclick="goToScreen('screenAddress')" class="btn btn-secondary">Back</button>
+                <button onclick="goToScreen('screenVerifyVideo')" class="btn btn-primary">Next</button>
+            </div>
+        </div>
+
+        <div id="screenVerifyVideo" class="screen">
+             <div>
+                <h2 class="text-xl font-semibold mb-4">Verification Video</h2>
+                <p class="text-gray-600 mb-4">Please record a short (5-10 second) video showing the front entrance and house number plate. This helps us confirm the property.</p>
+                <p class="text-gray-600 mb-4">We'll need access to your camera.</p>
+                <button onclick="startCamera('cameraFeedVerify', 'messageAreaVerify')" class="btn btn-primary mx-auto block mb-4">Start Camera</button>
+                <video id="cameraFeedVerify" playsinline autoplay muted class="hidden"></video>
+                 <div id="messageAreaVerify" class="messageArea">Camera status...</div>
+            </div>
+             <div class="flex justify-between mt-6">
+                <button onclick="goToScreen('screenGeo')" class="btn btn-secondary">Back</button>
+                <button onclick="goToScreen('screenPhotos')" class="btn btn-primary">Next (Skip Video for Now)</button>
+            </div>
+        </div>
+
+         <div id="screenPhotos" class="screen">
+             <div>
+                <h2 class="text-xl font-semibold mb-4">Property Photos</h2>
+                <p class="text-gray-600 mb-4">Now, please take the required photos. Follow the guidance for each shot.</p>
+                 <p class="text-gray-600 mb-4">(We'll add the specific photo checklist here based on appraiser feedback)</p>
+                <button onclick="startCamera('cameraFeedPhotos', 'messageAreaPhotos')" class="btn btn-primary mx-auto block mb-4">Start Camera for Photos</button>
+                <video id="cameraFeedPhotos" playsinline autoplay muted class="hidden"></video>
+                 <div id="messageAreaPhotos" class="messageArea">Camera status...</div>
+            </div>
+             <div class="flex justify-between mt-6">
+                <button onclick="goToScreen('screenVerifyVideo')" class="btn btn-secondary">Back</button>
+                <button onclick="goToScreen('screenPayment')" class="btn btn-primary">Next (Submit Photos)</button>
+            </div>
+        </div>
+
+         <div id="screenPayment" class="screen">
+             <div>
+                <h2 class="text-xl font-semibold mb-4">Payment</h2>
+                <p class="text-gray-600 mb-4">Total Cost: $199.00 CAD</p>
+                <p class="text-gray-600 mb-4">Please enter your payment details below. (Placeholder - Payment integration needed)</p>
+                <div class="border p-4 rounded-md bg-gray-100 text-center text-gray-500">
+                    Payment Form Placeholder
+                </div>
+            </div>
+             <div class="flex justify-between mt-6">
+                <button onclick="goToScreen('screenPhotos')" class="btn btn-secondary">Back</button>
+                <button onclick="goToScreen('screenSuccess')" class="btn btn-primary">Submit Payment</button>
+            </div>
+        </div>
+
+         <div id="screenSuccess" class="screen">
+             <div>
+                <h2 class="text-xl font-semibold mb-4 text-green-600">Submission Successful!</h2>
+                <p class="text-gray-600 mb-4">Thank you! We have received your property information and photos.</p>
+                <p class="text-gray-600 mb-4">You can expect your desktop appraisal report via email within [Expected Turnaround Time, e.g., 2 business days].</p>
+                <p class="text-gray-600">A confirmation email has been sent to [User's Email Address].</p>
+            </div>
+             <div class="flex justify-center mt-6">
+                 <button onclick="goToScreen('screenWelcome')" class="btn btn-secondary">Start New Appraisal</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentScreen = 'screenWelcome';
+        let cameraStream = null; // To hold the active camera stream
+
+        // --- Navigation ---
+        function goToScreen(screenId) {
+            // Stop camera if moving away from a screen using it
+            stopCamera();
+
+            document.getElementById(currentScreen).classList.remove('active');
+            document.getElementById(screenId).classList.add('active');
+            currentScreen = screenId;
+            window.scrollTo(0, 0); // Scroll to top on screen change
+        }
+
+         // Enable Welcome Next button only when terms are agreed
+        const termsCheckbox = document.getElementById('agreeTerms');
+        const welcomeNextButton = document.getElementById('welcomeNext');
+        termsCheckbox.addEventListener('change', () => {
+            welcomeNextButton.disabled = !termsCheckbox.checked;
+        });
+
+
+        // --- Geolocation ---
+        function requestGeolocation() {
+            const statusDiv = document.getElementById('geoStatus');
+            statusDiv.textContent = 'Requesting location...';
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        statusDiv.textContent = `Location acquired: Lat ${position.coords.latitude.toFixed(4)}, Lon ${position.coords.longitude.toFixed(4)}`;
+                        statusDiv.classList.add('text-green-600');
+                        statusDiv.classList.remove('text-red-600');
+                        console.log('Geolocation:', position);
+                        // TODO: Store or use the location data
+                    },
+                    (error) => {
+                        statusDiv.textContent = `Error getting location: ${error.message}`;
+                        statusDiv.classList.add('text-red-600');
+                         statusDiv.classList.remove('text-green-600');
+                        console.error('Geolocation Error:', error);
+                    },
+                    {
+                        enableHighAccuracy: true, // Request more accurate position
+                        timeout: 10000, // 10 seconds timeout
+                        maximumAge: 0 // Force fresh location
+                    }
+                );
+            } else {
+                statusDiv.textContent = 'Geolocation is not supported by your browser.';
+                 statusDiv.classList.add('text-red-600');
+                 statusDiv.classList.remove('text-green-600');
+            }
+        }
+
+        // --- Camera Access ---
+        async function startCamera(videoId, messageAreaId) {
+            const videoElement = document.getElementById(videoId);
+            const messageArea = document.getElementById(messageAreaId);
+            messageArea.textContent = 'Requesting camera access...';
+            messageArea.className = 'messageArea'; // Reset styling
+            videoElement.classList.add('hidden'); // Hide until stream starts
+
+            // Ensure no previous stream is running
+            stopCamera();
+
+            // Check for camera support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                messageArea.textContent = 'Camera access (getUserMedia) is not supported by your browser.';
+                messageArea.classList.add('error');
+                return;
+            }
+
+            try {
+                // Request camera stream (prefer back camera for mobile)
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                     video: { facingMode: 'environment' }, // Prefer back camera
+                     audio: false // No audio needed for photos/verification video maybe?
+                });
+
+                videoElement.srcObject = cameraStream;
+                videoElement.classList.remove('hidden'); // Show video element
+                messageArea.textContent = 'Camera active. Point at the subject.';
+                messageArea.classList.add('success');
+
+                // Log camera capabilities (optional)
+                const track = cameraStream.getVideoTracks()[0];
+                console.log('Camera capabilities:', track.getCapabilities());
+
+
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                let errMsg = `Error accessing camera: ${err.name}`;
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    errMsg = 'Camera permission denied. Please enable camera access in your browser settings.';
+                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                    errMsg = 'No camera found on this device.';
+                } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                     errMsg = 'Camera is already in use or cannot be accessed.';
+                }
+                 messageArea.textContent = errMsg;
+                 messageArea.classList.add('error');
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                 // Optionally hide video elements when camera stops
+                 // document.getElementById('cameraFeedVerify').classList.add('hidden');
+                 // document.getElementById('cameraFeedPhotos').classList.add('hidden');
+                 console.log('Camera stopped.');
+            }
+        }
+
+        // --- Initial Setup ---
+        // Ensure only the welcome screen is visible initially
+        document.addEventListener('DOMContentLoaded', () => {
+             document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+             document.getElementById('screenWelcome').classList.add('active');
+             welcomeNextButton.disabled = !termsCheckbox.checked; // Ensure button state is correct on load
+        });
+
+    </script>
+
+</body>
+</html>
